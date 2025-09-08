@@ -831,6 +831,27 @@
         document.getElementById('add-tool-button-mobile')
       ];
       
+      // 生成随机渐变色
+      function generateRandomGradient() {
+        // 预定义一些颜色方案
+        const colorSchemes = [
+          'from-blue-600 to-indigo-600',
+          'from-purple-600 to-pink-600',
+          'from-red-600 to-orange-600',
+          'from-amber-600 to-yellow-500',
+          'from-emerald-600 to-teal-600',
+          'from-cyan-600 to-blue-600',
+          'from-violet-600 to-purple-600',
+          'from-pink-600 to-rose-600',
+          'from-orange-600 to-amber-600',
+          'from-green-600 to-emerald-600'
+        ];
+        
+        // 随机选择一个颜色方案
+        const randomIndex = Math.floor(Math.random() * colorSchemes.length);
+        return colorSchemes[randomIndex];
+      }
+      
       addToolButtons.forEach(button => {
         if (button) {
           button.addEventListener('click', () => {
@@ -838,6 +859,9 @@
             document.getElementById('add-tool-form').reset();
             delete document.getElementById('add-tool-form').dataset.editingToolId;
             document.getElementById('add-tool-form').querySelector('button[type="submit"]').textContent = '添加工具';
+            
+            // 设置随机颜色
+            document.getElementById('tool-color').value = generateRandomGradient();
             
             // 显示模态框
             document.getElementById('add-tool-modal').classList.remove('hidden');
