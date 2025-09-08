@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON与CSV互转工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        accent: '#10b981',
+                        danger: '#ef4444',
+                        light: '#f1f5f9',
+                        dark: '#1e293b'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .shadow-custom {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .transition-custom {
+                transition: all 0.3s ease;
+            }
+            .scrollbar-thin {
+                scrollbar-width: thin;
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 5px;
+                height: 5px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background-color: rgba(100, 116, 139, 0.5);
+                border-radius: 3px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter text-dark min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- 标题部分 -->
+        <header class="text-center mb-10">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-dark mb-3">
+                <i class="fa fa-exchange text-primary mr-2"></i>JSON与CSV互转工具
+            </h1>
+            <p class="text-secondary max-w-2xl mx-auto">
+                支持JSON与CSV之间的双向转换，特别支持复杂嵌套JSON结构和CSV文件上传
+            </p>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- JSON输入区 -->
+            <section class="bg-white rounded-xl shadow-custom p-6 transition-custom hover:shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i class="fa fa-code text-primary mr-2"></i>JSON输入
+                    </h2>
+                    <div class="flex gap-2">
+                        <button id="formatBtn" class="px-3 py-1 bg-light text-secondary rounded-md text-sm flex items-center hover:bg-gray-200 transition-custom">
+                            <i class="fa fa-indent mr-1"></i>格式化
+                        </button>
+                        <button id="clearJsonBtn" class="px-3 py-1 bg-light text-secondary rounded-md text-sm flex items-center hover:bg-gray-200 transition-custom">
+                            <i class="fa fa-eraser mr-1"></i>清空
+                        </button>
+                        <button id="sampleJsonBtn" class="px-3 py-1 bg-light text-secondary rounded-md text-sm flex items-center hover:bg-gray-200 transition-custom">
+                            <i class="fa fa-file-text-o mr-1"></i>示例
+                        </button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <textarea id="jsonInput" class="w-full h-[400px] p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary scrollbar-thin font-mono text-sm" placeholder="请粘贴JSON数据到这里..."></textarea>
+                    <div id="jsonError" class="hidden absolute top-3 left-3 text-danger text-sm font-medium"></div>
+                </div>
+            </section>
+
+            <!-- CSV输出区 -->
+            <section class="bg-white rounded-xl shadow-custom p-6 transition-custom hover:shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold flex items-center">
+                        <i class="fa fa-table text-accent mr-2"></i>CSV输出
+                    </h2>
+                    <div class="flex gap-2">
+                        <button id="copyBtn" class="px-3 py-1 bg-light text-secondary rounded-md text-sm flex items-center hover:bg-gray-200 transition-custom">
+                            <i class="fa fa-clipboard mr-1"></i>复制
+                        </button>
+                        <button id="downloadBtn" class="px-3 py-1 bg-primary text-white rounded-md text-sm flex items-center hover:bg-primary/90 transition-custom">
+                            <i class="fa fa-download mr-1"></i>下载
+                        </button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <textarea id="csvOutput" class="w-full h-[400px] p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent scrollbar-thin font-mono text-sm" placeholder="转换后的CSV将显示在这里..." readonly></textarea>
+                </div>
+            </section>
+        </main>
+
+        <!-- 设置和转换按钮 -->
+        <section class="mt-8 bg-white rounded-xl shadow-custom p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex flex-wrap gap-4">
+                    <!-- 分隔符设置 -->
+                    <div class="flex items-center gap-2">
+                        <label for="delimiter" class="text-secondary font-medium">分隔符:</label>
+                        <select id="delimiter" class="px-3 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                            <option value=",">逗号 (,)</option>
+                            <option value=";">分号 (;)</option>
+                            <option value="&#9;">制表符 (Tab)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 引号设置 -->
+                    <div class="flex items-center gap-2">
+                        <label for="quoteChar" class="text-secondary font-medium">引号:</label>
+                        <select id="quoteChar" class="px-3 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                            <option value='"'>双引号 (")</option>
+                            <option value="'">单引号 (')</option>
+                            <option value="">无引号</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 嵌套深度设置 -->
+                    <div class="flex items-center gap-2">
+                        <label for="maxDepth" class="text-secondary font-medium">最大嵌套深度:</label>
+                        <input type="number" id="maxDepth" min="1" max="10" value="5" class="w-16 px-3 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button id="jsonToCsvBtn" class="px-6 py-2 bg-primary text-white rounded-md font-medium flex items-center justify-center hover:bg-primary/90 transition-custom shadow-sm hover:shadow">
+                        <i class="fa fa-arrow-right mr-2"></i>JSON → CSV
+                    </button>
+                    <button id="csvToJsonBtn" class="px-6 py-2 bg-accent text-white rounded-md font-medium flex items-center justify-center hover:bg-accent/90 transition-custom shadow-sm hover:shadow">
+                        <i class="fa fa-arrow-left mr-2"></i>CSV → JSON
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 使用说明 -->
+        <section class="mt-8 bg-white rounded-xl shadow-custom p-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fa fa-info-circle text-primary mr-2"></i>使用说明
+            </h2>
+            <div class="text-secondary space-y-2">
+                <p>1. 在左侧文本框中粘贴您的JSON数据，可以是数组或对象格式</p>
+                <p>2. 调整右侧的设置选项，如分隔符、引号类型和最大嵌套深度</p>
+                <p>3. 点击"转换JSON到CSV"按钮进行转换</p>
+                <p>4. 转换完成后，可以复制结果或下载CSV文件</p>
+                <p class="mt-4 font-medium text-dark">支持的JSON结构:</p>
+                <ul class="list-disc list-inside space-y-1 ml-2">
+                    <li>简单对象: {"name":"John","age":30}</li>
+                    <li>对象数组: [{"name":"John"},{"name":"Jane"}]</li>
+                    <li>嵌套对象: {"user":{"name":"John","address":{"city":"New York"}}}</li>
+                    <li>复杂嵌套: {"data":[[{"Id":1,"Name":"Item1"},{"Id":2,"Name":"Item2"}]]}</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 页脚 -->
+        <footer class="mt-10 text-center text-secondary text-sm">
+            <p>© 2023 JSON转CSV工具 | 支持复杂嵌套JSON数据处理</p>
+        </footer>
+    </div>
+
+    <!-- 核心JavaScript代码 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取DOM元素
+            const jsonInput = document.getElementById('jsonInput');
+            const csvOutput = document.getElementById('csvOutput');
+            const jsonError = document.getElementById('jsonError');
+            const jsonToCsvBtn = document.getElementById('jsonToCsvBtn');
+            const csvToJsonBtn = document.getElementById('csvToJsonBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const formatBtn = document.getElementById('formatBtn');
+            const clearJsonBtn = document.getElementById('clearJsonBtn');
+            const sampleJsonBtn = document.getElementById('sampleJsonBtn');
+            const delimiterSelect = document.getElementById('delimiter');
+            const quoteCharSelect = document.getElementById('quoteChar');
+            const maxDepthInput = document.getElementById('maxDepth');
+            
+            // 添加CSV文件上传功能
+            const csvFileInput = document.createElement('input');
+            csvFileInput.type = 'file';
+            csvFileInput.accept = '.csv';
+            csvFileInput.style.display = 'none';
+            document.body.appendChild(csvFileInput);
+            
+            // 为CSV输出区添加上传按钮
+            const csvUploadBtn = document.createElement('button');
+            csvUploadBtn.id = 'uploadCsvBtn';
+            csvUploadBtn.className = 'px-3 py-1 bg-light text-secondary rounded-md text-sm flex items-center hover:bg-gray-200 transition-custom';
+            csvUploadBtn.innerHTML = '<i class="fa fa-upload mr-1"></i>上传CSV';
+            csvUploadBtn.addEventListener('click', () => {
+                csvFileInput.click();
+            });
+            
+            // 将上传按钮插入到CSV输出区的按钮组中
+            const csvButtonsDiv = copyBtn.parentElement;
+            csvButtonsDiv.insertBefore(csvUploadBtn, csvButtonsDiv.firstChild);
+            
+            // CSV文件上传处理
+            csvFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        csvOutput.value = event.target.result;
+                        // 自动转换上传的CSV为JSON
+                        csvToJsonBtn.click();
+                    } catch (error) {
+                        showJsonError('文件读取错误: ' + error.message);
+                    }
+                };
+                reader.onerror = () => {
+                    showJsonError('文件读取失败');
+                };
+                reader.readAsText(file);
+                
+                // 重置文件输入，允许再次选择同一文件
+                setTimeout(() => {
+                    csvFileInput.value = '';
+                }, 100);
+            });
+
+            // 示例JSON数据
+            const sampleJson = `{
+  "data": [
+    [
+      {"Id": 1, "Name": "Item 1", "Price": 100},
+      {"Id": 2, "Name": "Item 2", "Price": 200}
+    ],
+    [
+      {"Id": 3, "Name": "Item 3", "Price": 300},
+      {"Id": 4, "Name": "Item 4", "Price": 400}
+    ]
+  ],
+  "metadata": {
+    "createdAt": "2023-08-01",
+    "totalItems": 4
+  }
+}`;
+
+            // 显示示例JSON
+            sampleJsonBtn.addEventListener('click', () => {
+                jsonInput.value = sampleJson;
+                hideJsonError();
+                // 自动格式化示例JSON
+                formatJson();
+            });
+
+            // 格式化JSON
+            formatBtn.addEventListener('click', formatJson);
+
+            function formatJson() {
+                try {
+                    const jsonObj = JSON.parse(jsonInput.value.trim() || '{}');
+                    jsonInput.value = JSON.stringify(jsonObj, null, 2);
+                    hideJsonError();
+                } catch (error) {
+                    showJsonError('JSON格式错误: ' + error.message);
+                }
+            }
+
+            // 清空JSON输入
+            clearJsonBtn.addEventListener('click', () => {
+                jsonInput.value = '';
+                csvOutput.value = '';
+                hideJsonError();
+            });
+
+            // 显示JSON错误
+            function showJsonError(message) {
+                jsonError.textContent = message;
+                jsonError.classList.remove('hidden');
+            }
+
+            // 隐藏JSON错误
+            function hideJsonError() {
+                jsonError.classList.add('hidden');
+            }
+
+            // JSON转CSV按钮事件监听
+            jsonToCsvBtn.addEventListener('click', () => {
+                try {
+                    hideJsonError();
+                    
+                    // 获取用户配置
+                    const delimiter = delimiterSelect.value === '\t' ? '\t' : delimiterSelect.value;
+                    const quoteChar = quoteCharSelect.value;
+                    const maxDepth = parseInt(maxDepthInput.value) || 5;
+                    
+                    // 解析JSON
+                    const jsonText = jsonInput.value.trim();
+                    if (!jsonText) {
+                        throw new Error('请输入JSON数据');
+                    }
+                    
+                    const jsonObj = JSON.parse(jsonText);
+                    
+                    // 转换为CSV
+                    const csv = jsonToCsv(jsonObj, delimiter, quoteChar, maxDepth);
+                    
+                    // 显示CSV结果
+                    csvOutput.value = csv;
+                    
+                    // 滚动到CSV输出区域
+                    csvOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    csvOutput.focus();
+                    csvOutput.select();
+                } catch (error) {
+                    showJsonError('转换失败: ' + error.message);
+                    csvOutput.value = '';
+                }
+            });
+            
+            // CSV转JSON按钮事件监听
+            csvToJsonBtn.addEventListener('click', () => {
+                try {
+                    hideJsonError();
+                    
+                    // 获取CSV数据
+                    const csvText = csvOutput.value.trim();
+                    if (!csvText) {
+                        throw new Error('请输入CSV数据或上传CSV文件');
+                    }
+                    
+                    // 获取用户配置
+                    const delimiter = delimiterSelect.value === '\t' ? '\t' : delimiterSelect.value;
+                    const quoteChar = quoteCharSelect.value;
+                    
+                    // 转换为JSON
+                    const jsonObj = csvToJson(csvText, delimiter, quoteChar);
+                    
+                    // 显示JSON结果
+                    jsonInput.value = JSON.stringify(jsonObj, null, 2);
+                    
+                    // 滚动到JSON输入区域
+                    jsonInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    jsonInput.focus();
+                } catch (error) {
+                    showJsonError('转换失败: ' + error.message);
+                }
+            });
+
+            // 复制CSV结果
+            copyBtn.addEventListener('click', () => {
+                csvOutput.select();
+                document.execCommand('copy');
+                
+                // 显示复制成功提示
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fa fa-check mr-1"></i>已复制';
+                copyBtn.classList.add('bg-accent', 'text-white');
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove('bg-accent', 'text-white');
+                }, 2000);
+            });
+
+            // 下载CSV文件
+            downloadBtn.addEventListener('click', () => {
+                if (!csvOutput.value) {
+                    return;
+                }
+                
+                const blob = new Blob([csvOutput.value], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                
+                // 设置文件名，使用当前日期
+                const date = new Date();
+                const timestamp = date.toISOString().slice(0, 10).replace(/-/g, '');
+                const filename = `json_to_csv_${timestamp}.csv`;
+                
+                if (link.download !== undefined) {
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', filename);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            });
+
+            // JSON转CSV的核心函数，支持复杂嵌套结构
+            function jsonToCsv(jsonData, delimiter, quoteChar, maxDepth) {
+                // 第一步：展平所有数据，处理嵌套结构
+                const flattenedData = [];
+                
+                // 递归展平数据
+                flattenData(jsonData, flattenedData, {}, 0, maxDepth);
+                
+                // 如果没有数据，返回空字符串
+                if (flattenedData.length === 0) {
+                    return '';
+                }
+                
+                // 第二步：提取所有唯一的列名
+                const headers = new Set();
+                flattenedData.forEach(row => {
+                    Object.keys(row).forEach(key => headers.add(key));
+                });
+                
+                const headerArray = Array.from(headers);
+                
+                // 第三步：生成CSV内容
+                let csv = '';
+                
+                // 添加表头
+                csv += headerArray.map(header => escapeCsv(header, quoteChar, delimiter)).join(delimiter) + '\n';
+                
+                // 添加数据行
+                flattenedData.forEach(row => {
+                    const values = headerArray.map(header => {
+                        const value = row[header] !== undefined ? row[header] : '';
+                        return escapeCsv(value, quoteChar, delimiter);
+                    });
+                    csv += values.join(delimiter) + '\n';
+                });
+                
+                return csv;
+            }
+
+            // 递归展平JSON数据的函数
+            function flattenData(data, resultArray, currentRow, currentDepth, maxDepth) {
+                // 如果超过最大深度，停止递归
+                if (currentDepth > maxDepth) {
+                    return;
+                }
+                
+                // 处理数组
+                if (Array.isArray(data)) {
+                    // 检查数组是否全部是对象，如果是，则每个对象作为一行
+                    const allObjects = data.every(item => item && typeof item === 'object');
+                    
+                    if (allObjects && data.length > 0) {
+                        // 每个对象作为一行
+                        data.forEach(item => {
+                            flattenData(item, resultArray, { ...currentRow }, currentDepth + 1, maxDepth);
+                        });
+                    } else {
+                        // 如果数组包含非对象元素，或者是空数组，将整个数组作为一个值
+                        const newRow = { ...currentRow };
+                        // 生成一个键名，表示这是一个数组值
+                        const arrayKey = `array_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                        newRow[arrayKey] = JSON.stringify(data);
+                        resultArray.push(newRow);
+                    }
+                }
+                // 处理对象
+                else if (data && typeof data === 'object') {
+                    const keys = Object.keys(data);
+                    
+                    if (keys.length === 0) {
+                        // 空对象，添加一个空行
+                        resultArray.push({ ...currentRow });
+                    } else {
+                        // 检查是否所有值都是原始类型或可直接处理的
+                        let allPrimitives = true;
+                        let hasNestedObjects = false;
+                        
+                        for (const key of keys) {
+                            const value = data[key];
+                            if (value && typeof value === 'object') {
+                                allPrimitives = false;
+                                hasNestedObjects = true;
+                                break;
+                            }
+                        }
+                        
+                        if (allPrimitives || currentDepth === maxDepth) {
+                            // 所有值都是原始类型，或者达到最大深度，直接添加为一行
+                            const newRow = { ...currentRow };
+                            for (const key of keys) {
+                                newRow[key] = data[key];
+                            }
+                            resultArray.push(newRow);
+                        } else {
+                            // 有嵌套对象，递归处理
+                            // 先处理所有非对象值
+                            const simpleRow = { ...currentRow };
+                            let hasAddedData = false;
+                            
+                            for (const key of keys) {
+                                const value = data[key];
+                                if (!(value && typeof value === 'object')) {
+                                    simpleRow[key] = value;
+                                    hasAddedData = true;
+                                }
+                            }
+                            
+                            // 如果只有嵌套对象，那么需要递归处理每个嵌套对象
+                            let nestedObjectsProcessed = false;
+                            for (const key of keys) {
+                                const value = data[key];
+                                if (value && typeof value === 'object') {
+                                    // 为嵌套对象创建新的行
+                                    const nestedRow = { ...simpleRow };
+                                    flattenData(value, resultArray, nestedRow, currentDepth + 1, maxDepth);
+                                    nestedObjectsProcessed = true;
+                                }
+                            }
+                            
+                            // 如果没有嵌套对象但有简单数据，添加这一行
+                            if (!nestedObjectsProcessed && hasAddedData) {
+                                resultArray.push(simpleRow);
+                            }
+                        }
+                    }
+                }
+                // 处理原始值
+                else {
+                    // 如果是单个原始值，直接添加为一行
+                    const newRow = { ...currentRow };
+                    newRow['value'] = data;
+                    resultArray.push(newRow);
+                }
+            }
+
+            // 转义CSV值，处理包含分隔符、引号或换行符的情况
+            function escapeCsv(value, quoteChar, delimiter) {
+                // 如果没有值，返回空字符串
+                if (value === null || value === undefined) {
+                    return '';
+                }
+                
+                // 转换为字符串
+                let str = String(value);
+                
+                // 如果不需要引号，直接返回
+                if (!quoteChar) {
+                    return str;
+                }
+                
+                // 检查是否需要转义
+                const needsEscaping = str.includes(delimiter) || 
+                                      str.includes(quoteChar) || 
+                                      str.includes('\n') || 
+                                      str.includes('\r');
+                
+                if (needsEscaping) {
+                    // 转义引号（将一个引号替换为两个引号）
+                    str = str.replace(new RegExp(quoteChar, 'g'), quoteChar + quoteChar);
+                    // 添加引号包围
+                    return quoteChar + str + quoteChar;
+                }
+                
+                return str;
+            }
+            
+            // CSV转JSON的核心函数
+            function csvToJson(csvText, delimiter, quoteChar) {
+                // 分割行
+                const lines = csvText.split('\n');
+                if (lines.length === 0) {
+                    return [];
+                }
+                
+                // 解析表头
+                const headers = parseCsvLine(lines[0], delimiter, quoteChar);
+                if (headers.length === 0) {
+                    return [];
+                }
+                
+                // 解析数据行
+                const result = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line === '') continue;
+                    
+                    const values = parseCsvLine(line, delimiter, quoteChar);
+                    const row = {};
+                    
+                    headers.forEach((header, index) => {
+                        // 处理值
+                        let value = values[index] !== undefined ? values[index] : '';
+                        
+                        // 尝试转换数值
+                        if (!isNaN(value) && value !== '') {
+                            row[header] = Number(value);
+                        } else if (value === 'true') {
+                            row[header] = true;
+                        } else if (value === 'false') {
+                            row[header] = false;
+                        } else if (value === 'null') {
+                            row[header] = null;
+                        } else if (value === 'undefined') {
+                            row[header] = undefined;
+                        } else {
+                            // 尝试解析JSON字符串
+                            try {
+                                row[header] = JSON.parse(value);
+                            } catch (e) {
+                                // 如果不是有效的JSON，保持原样
+                                row[header] = value;
+                            }
+                        }
+                    });
+                    
+                    result.push(row);
+                }
+                
+                return result;
+            }
+            
+            // 解析CSV行
+            function parseCsvLine(line, delimiter, quoteChar) {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                let i = 0;
+                
+                while (i < line.length) {
+                    const char = line[i];
+                    
+                    if (char === quoteChar && quoteChar) {
+                        // 处理引号
+                        if (i + 1 < line.length && line[i + 1] === quoteChar) {
+                            // 两个连续的引号表示一个引号
+                            current += quoteChar;
+                            i += 2;
+                        } else {
+                            // 切换引号状态
+                            inQuotes = !inQuotes;
+                            i++;
+                        }
+                    } else if (char === delimiter && !inQuotes) {
+                        // 分隔符，结束当前值
+                        result.push(current);
+                        current = '';
+                        i++;
+                    } else {
+                        // 普通字符
+                        current += char;
+                        i++;
+                    }
+                }
+                
+                // 添加最后一个值
+                result.push(current);
+                
+                return result;
+            }
+        });
+    </script>
+</body>
+</html>

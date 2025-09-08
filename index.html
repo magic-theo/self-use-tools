@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工具中心 | 快速访问您的常用工具</title>
+  <!-- 引入Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- Tailwind配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5', // 主色调：靛蓝色
+            secondary: '#10B981', // 辅助色：绿色
+            accent: '#F59E0B', // 强调色：橙色
+            dark: '#1F2937', // 深色
+            light: '#F9FAFB' // 浅色
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-hover {
+        @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+      }
+      .bg-gradient-primary {
+        @apply bg-gradient-to-br from-primary to-primary/80;
+      }
+    }
+  </style>
+  
+  <style>
+    /* 全局动画 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    /* 渐变背景动画 */
+    .bg-gradient-animated {
+      background-size: 200% 200%;
+      animation: gradientAnimation 15s ease infinite;
+    }
+    
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    /* 模态框动画 */
+    .modal-enter {
+      animation: modalFadeIn 0.3s ease forwards;
+    }
+    
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    /* 工具编辑按钮样式 */
+    .tool-actions {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .card-hover:hover .tool-actions {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-light min-h-screen">
+  <!-- 导航栏 -->
+  <nav class="bg-white shadow-sm fixed w-full z-10 transition-all duration-300" id="navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 flex items-center">
+            <i class="fa fa-wrench text-primary text-2xl mr-2"></i>
+            <span class="font-bold text-xl text-dark">工具中心</span>
+          </div>
+        </div>
+        <div class="hidden md:flex items-center space-x-4">
+          <a href="#local" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors">本地工具</a>
+          <a href="#web" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors">网络工具</a>
+          <a href="#dev" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors">开发工具</a>
+          <a href="#util" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors">实用工具</a>
+          <button id="backup-button" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors">
+            <i class="fa fa-download mr-1"></i> 备份
+          </button>
+          <button id="add-tool-button" class="px-3 py-2 rounded-md text-sm font-medium text-white bg-primary hover:bg-primary/90 transition-colors">
+            <i class="fa fa-plus mr-1"></i> 添加工具
+          </button>
+        </div>
+        <div class="md:hidden flex items-center space-x-2">
+          <button id="add-tool-button-mobile" class="text-primary hover:text-primary/90 p-2">
+            <i class="fa fa-plus text-xl"></i>
+          </button>
+          <button id="backup-button-mobile" class="text-gray-700 hover:text-primary p-2">
+            <i class="fa fa-download text-xl"></i>
+          </button>
+          <button id="mobile-menu-button" class="text-gray-700 hover:text-primary p-2">
+            <i class="fa fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 移动端菜单 -->
+      <div id="mobile-menu" class="hidden md:hidden bg-white shadow-lg">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          <a href="#local" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100">本地工具</a>
+          <a href="#web" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100">网络工具</a>
+          <a href="#dev" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100">开发工具</a>
+          <a href="#util" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100">实用工具</a>
+          <button id="backup-button-mobile-menu" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-100">
+            <i class="fa fa-download mr-2"></i> 备份工具
+          </button>
+        </div>
+      </div>
+  </nav>
+
+  <!-- 英雄区域 -->
+  <header class="pt-24 pb-16 px-4 bg-gradient-animated bg-gradient-to-r from-blue-50 to-purple-50">
+    <div class="max-w-7xl mx-auto text-center">
+      <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-dark mb-4 animate-fadeIn" style="animation-delay: 0.1s;">
+        欢迎使用 <span class="text-primary">工具中心</span>
+      </h1>
+      <p class="text-gray-600 text-lg md:text-xl max-w-3xl mx-auto mb-8 animate-fadeIn" style="animation-delay: 0.2s;">
+        一站式访问您的常用工具，提升工作效率，简化日常操作
+      </p>
+      <div class="flex flex-wrap justify-center gap-4 animate-fadeIn" style="animation-delay: 0.3s;">
+        <a href="#local" class="bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg flex items-center">
+          <i class="fa fa-desktop mr-2"></i> 浏览本地工具
+        </a>
+        <a href="#util" class="bg-white text-primary border border-primary px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm hover:shadow-md flex items-center">
+          <i class="fa fa-star-o mr-2"></i> 查看实用工具
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要内容区域 -->
+  <main class="max-w-7xl mx-auto px-4 py-12">
+    <!-- 本地工具部分 -->
+    <section id="local" class="mb-16">
+      <div class="flex items-center mb-8">
+        <i class="fa fa-desktop text-primary text-2xl mr-3"></i>
+        <h2 class="text-2xl md:text-3xl font-bold text-dark">本地工具</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      </div>
+    </section>
+
+    <!-- 网络工具部分 -->
+    <section id="web" class="mb-16">
+      <div class="flex items-center mb-8">
+        <i class="fa fa-globe text-secondary text-2xl mr-3"></i>
+        <h2 class="text-2xl md:text-3xl font-bold text-dark">网络工具</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- GitHub 工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+            <i class="fa fa-github text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">GitHub</h3>
+            <p class="text-gray-600 mb-4">全球最大的代码托管平台，用于版本控制和协作开发。</p>
+            <a href="https://github.com" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              访问官网 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Stack Overflow 工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center">
+            <i class="fa fa-stack-overflow text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">Stack Overflow</h3>
+            <p class="text-gray-600 mb-4">程序员问答社区，解决开发过程中遇到的各种技术问题。</p>
+            <a href="https://stackoverflow.com" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              访问官网 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- MDN Web Docs 工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+            <i class="fa fa-code text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">MDN Web Docs</h3>
+            <p class="text-gray-600 mb-4">Web开发权威文档，涵盖HTML、CSS、JavaScript等前端技术。</p>
+            <a href="https://developer.mozilla.org" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              访问官网 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 开发工具部分 -->
+    <section id="dev" class="mb-16">
+      <div class="flex items-center mb-8">
+        <i class="fa fa-code text-accent text-2xl mr-3"></i>
+        <h2 class="text-2xl md:text-3xl font-bold text-dark">开发工具</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- JSON 格式化工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center">
+            <i class="fa fa-code-fork text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">JSON 格式化</h3>
+            <p class="text-gray-600 mb-4">在线JSON格式化和验证工具，帮助开发者处理JSON数据。</p>
+            <a href="https://jsonformatter.curiousconcept.com/" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              使用工具 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- 代码编辑器工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center">
+            <i class="fa fa-edit text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">在线代码编辑器</h3>
+            <p class="text-gray-600 mb-4">支持多种编程语言的在线代码编辑器，无需安装即可编写和测试代码。</p>
+            <a href="https://codepen.io/" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              使用工具 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- 配色方案工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+            <i class="fa fa-paint-brush text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">配色方案生成器</h3>
+            <p class="text-gray-600 mb-4">帮助设计师和开发者创建和谐的配色方案，提升界面美观度。</p>
+            <a href="https://coolors.co/" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              使用工具 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 实用工具部分 -->
+    <section id="util">
+      <div class="flex items-center mb-8">
+        <i class="fa fa-wrench text-primary text-2xl mr-3"></i>
+        <h2 class="text-2xl md:text-3xl font-bold text-dark">实用工具</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 时间转换工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+            <i class="fa fa-clock-o text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">时间转换工具</h3>
+            <p class="text-gray-600 mb-4">时区转换、时间戳转换和日期计算工具，方便跨时区工作。</p>
+            <a href="https://www.epochconverter.com/" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              使用工具 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- 单位转换工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
+            <i class="fa fa-exchange text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">单位转换工具</h3>
+            <p class="text-gray-600 mb-4">长度、重量、体积等各种单位的转换工具，适用于各种场景。</p>
+            <a href="https://www.unitconverters.net/" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              使用工具 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- 计算器工具卡片 -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+          <div class="h-40 bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+            <i class="fa fa-calculator text-white text-5xl"></i>
+          </div>
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-dark mb-2">科学计算器</h3>
+            <p class="text-gray-600 mb-4">高级科学计算器，支持复杂数学运算、三角函数和对数计算。</p>
+            <a href="https://www.calculator.net/scientific-calculator.html" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+              使用工具 <i class="fa fa-external-link ml-2"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 添加工具模态框 -->
+  <div id="add-tool-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 animate-fadeIn">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-dark">添加新工具</h3>
+        <button id="close-add-tool-modal" class="text-gray-500 hover:text-gray-700 text-xl">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      
+      <form id="add-tool-form" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label for="tool-name" class="block text-sm font-medium text-gray-700">工具名称</label>
+            <input type="text" id="tool-name" name="toolName" required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+          </div>
+          
+          <div class="space-y-2">
+            <label for="tool-category" class="block text-sm font-medium text-gray-700">工具分类</label>
+            <select id="tool-category" name="toolCategory" required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+              <option value="local">本地工具</option>
+              <option value="web">网络工具</option>
+              <option value="dev">开发工具</option>
+              <option value="util">实用工具</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="space-y-2">
+          <label for="tool-url" class="block text-sm font-medium text-gray-700">工具URL</label>
+          <input type="url" id="tool-url" name="toolUrl" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+        </div>
+        
+        <div class="space-y-2">
+          <label for="tool-description" class="block text-sm font-medium text-gray-700">工具描述</label>
+          <textarea id="tool-description" name="toolDescription" rows="3" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"></textarea>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label for="tool-icon" class="block text-sm font-medium text-gray-700">工具图标
+              <span class="text-xs text-gray-500 ml-2">Font Awesome 图标类名 (例如: fa-database)</span>
+            </label>
+            <input type="text" id="tool-icon" name="toolIcon" required value="fa-wrench"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+          </div>
+          
+          <div class="space-y-2">
+            <label for="tool-color" class="block text-sm font-medium text-gray-700">图标背景颜色
+              <span class="text-xs text-gray-500 ml-2">颜色代码或渐变色 (例如: from-blue-600 to-blue-800)</span>
+            </label>
+            <input type="text" id="tool-color" name="toolColor" required value="from-primary to-primary/80"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+          </div>
+        </div>
+        
+        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+          <button type="button" id="cancel-add-tool" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+            取消
+          </button>
+          <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            添加工具
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- 备份模态框 -->
+  <div id="backup-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fadeIn">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-dark">工具备份与恢复</h3>
+        <button id="close-backup-modal" class="text-gray-500 hover:text-gray-700 text-xl">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-6">
+        <div>
+          <h4 class="text-lg font-semibold text-gray-700 mb-3">导出备份</h4>
+          <p class="text-gray-600 mb-4">将您的工具配置导出为JSON文件，以便日后恢复或分享。</p>
+          <button id="export-backup" class="w-full flex items-center justify-center px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <i class="fa fa-download mr-2"></i> 导出工具配置
+          </button>
+        </div>
+        
+        <div class="pt-4 border-t border-gray-200">
+          <h4 class="text-lg font-semibold text-gray-700 mb-3">导入备份</h4>
+          <p class="text-gray-600 mb-4">从之前导出的JSON文件恢复工具配置。</p>
+          <div class="relative">
+            <input type="file" id="import-backup" accept=".json" class="hidden">
+            <label for="import-backup" class="w-full flex items-center justify-center px-4 py-3 border border-dashed border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+              <i class="fa fa-upload mr-2"></i> 选择备份文件
+            </label>
+          </div>
+          <p id="import-status" class="mt-2 text-sm text-gray-500 hidden"></p>
+        </div>
+        
+        <div class="pt-4 border-t border-gray-200">
+          <button id="reset-tools" class="w-full flex items-center justify-center px-4 py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors">
+            <i class="fa fa-refresh mr-2"></i> 重置为默认工具
+          </button>
+          <p class="mt-2 text-sm text-gray-500">此操作将删除所有自定义添加的工具，恢复到原始状态。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 确认对话框 -->
+  <div id="confirm-dialog" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fadeIn">
+      <h3 class="text-xl font-bold text-dark mb-4" id="confirm-title">确认操作</h3>
+      <p class="text-gray-600 mb-6" id="confirm-message">您确定要执行此操作吗？</p>
+      
+      <div class="flex justify-end space-x-4">
+        <button id="confirm-cancel" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+          取消
+        </button>
+        <button id="confirm-ok" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+          确认
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 页脚 -->
+  <footer class="bg-dark text-white py-12">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center mb-4">
+            <i class="fa fa-wrench text-primary text-2xl mr-2"></i>
+            <span class="font-bold text-xl">工具中心</span>
+          </div>
+          <p class="text-gray-400">
+            一个精心设计的工具导航平台，帮助您快速访问常用工具，提升工作和学习效率。
+          </p>
+        </div>
+        
+        <div>
+          <h3 class="text-lg font-semibold mb-4">快速链接</h3>
+          <ul class="space-y-2">
+            <li><a href="#local" class="text-gray-400 hover:text-white transition-colors">本地工具</a></li>
+            <li><a href="#web" class="text-gray-400 hover:text-white transition-colors">网络工具</a></li>
+            <li><a href="#dev" class="text-gray-400 hover:text-white transition-colors">开发工具</a></li>
+            <li><a href="#util" class="text-gray-400 hover:text-white transition-colors">实用工具</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="text-lg font-semibold mb-4">联系我们</h3>
+          <ul class="space-y-2">
+            <li class="flex items-center text-gray-400">
+              <i class="fa fa-envelope-o mr-2"></i> support@tools.com
+            </li>
+            <li class="flex items-center text-gray-400">
+              <i class="fa fa-phone mr-2"></i> +86 123 4567 8910
+            </li>
+          </ul>
+          <div class="mt-4 flex space-x-4">
+            <a href="#" class="text-gray-400 hover:text-white transition-colors text-xl">
+              <i class="fa fa-github"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition-colors text-xl">
+              <i class="fa fa-twitter"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white transition-colors text-xl">
+              <i class="fa fa-linkedin"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500">
+        <p>&copy; 2023 工具中心 - 版权所有</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    // 移动端菜单切换
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+    
+    // 导航栏滚动效果
+    const navbar = document.getElementById('navbar');
+    let lastScrollTop = 0;
+    
+    window.addEventListener('scroll', () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      
+      if (scrollTop > 100) {
+        navbar.classList.add('bg-white/95', 'backdrop-blur-sm', 'shadow-md');
+        navbar.classList.remove('bg-white', 'shadow-sm');
+      } else {
+        navbar.classList.add('bg-white', 'shadow-sm');
+        navbar.classList.remove('bg-white/95', 'backdrop-blur-sm', 'shadow-md');
+      }
+      
+      lastScrollTop = scrollTop;
+    });
+    
+    // 平滑滚动
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+        
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          window.scrollTo({
+            top: targetElement.offsetTop - 80, // 减去导航栏高度
+            behavior: 'smooth'
+          });
+          
+          // 关闭移动端菜单
+          if (!mobileMenu.classList.contains('hidden')) {
+            mobileMenu.classList.add('hidden');
+          }
+        }
+      });
+    });
+    
+    // 卡片动画延迟加载
+    const cards = document.querySelectorAll('.card-hover');
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animation = 'fadeIn 0.5s ease forwards';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1
+    });
+    
+    cards.forEach((card, index) => {
+      card.style.opacity = '0';
+      card.style.animationDelay = `${0.1 * (index % 3)}s`;
+      observer.observe(card);
+    });
+    
+    // 备份和添加工具功能
+    
+    // 存储键名
+    const STORAGE_KEY = 'tool_center_tools';
+    
+    // 初始化 - 从localStorage加载自定义工具
+    function initTools() {
+      const savedTools = localStorage.getItem(STORAGE_KEY);
+      if (savedTools) {
+        const tools = JSON.parse(savedTools);
+        tools.forEach(tool => {
+          addToolToDOM(tool);
+        });
+      }
+    }
+    
+    // 添加工具到DOM
+    function addToolToDOM(tool) {
+      const categorySection = document.getElementById(tool.category);
+      if (!categorySection) return;
+      
+      const toolGrid = categorySection.querySelector('.grid');
+      if (!toolGrid) return;
+      
+      // 创建工具卡片
+      const toolCard = document.createElement('div');
+      toolCard.className = 'bg-white rounded-xl shadow-sm overflow-hidden card-hover';
+      toolCard.dataset.toolId = tool.id;
+      
+      // 卡片内容
+      const gradientClass = tool.color.includes('from-') ? 'bg-gradient-to-br' : 'bg-gradient-primary';
+      const colorClass = tool.color.includes('from-') ? tool.color : '';
+      
+      toolCard.innerHTML = `
+        <div class="h-40 ${gradientClass} ${colorClass} flex items-center justify-center relative">
+          <i class="fa ${tool.icon} text-white text-5xl"></i>
+          <div class="absolute top-2 right-2 tool-actions">
+            <button class="edit-tool p-1 text-white/80 hover:text-white bg-black/30 rounded-full m-1" title="编辑工具">
+              <i class="fa fa-pencil"></i>
+            </button>
+            <button class="delete-tool p-1 text-white/80 hover:text-white bg-black/30 rounded-full m-1" title="删除工具">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold text-dark mb-2">${tool.name}</h3>
+          <p class="text-gray-600 mb-4">${tool.description}</p>
+          <a href="${tool.url}" target="_blank" class="inline-flex items-center text-primary hover:text-primary/80 font-medium">
+            ${tool.category === 'local' ? '立即访问' : '访问网站'} <i class="fa fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      `;
+      
+      // 添加到网格中
+      toolGrid.appendChild(toolCard);
+      
+      // 添加动画
+      toolCard.style.opacity = '0';
+      toolCard.style.animation = 'fadeIn 0.5s ease forwards';
+      
+      // 添加编辑和删除事件
+      toolCard.querySelector('.edit-tool').addEventListener('click', () => editTool(tool));
+      toolCard.querySelector('.delete-tool').addEventListener('click', () => deleteTool(tool.id));
+    }
+    
+    // 保存工具到localStorage
+    function saveTool(tool) {
+      const savedTools = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      
+      // 检查是否已存在相同ID的工具（用于更新）
+      const existingIndex = savedTools.findIndex(t => t.id === tool.id);
+      
+      if (existingIndex >= 0) {
+        // 更新现有工具
+        savedTools[existingIndex] = tool;
+      } else {
+        // 添加新工具
+        savedTools.push(tool);
+      }
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedTools));
+    }
+    
+    // 删除工具
+    function deleteTool(toolId) {
+      showConfirmDialog(
+        '确认删除',
+        '您确定要删除这个工具吗？此操作无法撤销。',
+        () => {
+          // 从DOM中删除
+          const toolCard = document.querySelector(`[data-tool-id="${toolId}"]`);
+          if (toolCard) {
+            toolCard.style.opacity = '0';
+            toolCard.style.transform = 'translateY(20px)';
+            toolCard.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            setTimeout(() => toolCard.remove(), 300);
+          }
+          
+          // 从localStorage中删除
+          const savedTools = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          const updatedTools = savedTools.filter(tool => tool.id !== toolId);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTools));
+        }
+      );
+    }
+    
+    // 编辑工具
+    function editTool(tool) {
+      // 填充表单
+      document.getElementById('tool-name').value = tool.name;
+      document.getElementById('tool-category').value = tool.category;
+      document.getElementById('tool-url').value = tool.url;
+      document.getElementById('tool-description').value = tool.description;
+      document.getElementById('tool-icon').value = tool.icon;
+      document.getElementById('tool-color').value = tool.color;
+      
+      // 存储当前编辑的工具ID
+      document.getElementById('add-tool-form').dataset.editingToolId = tool.id;
+      
+      // 显示模态框
+      document.getElementById('add-tool-modal').classList.remove('hidden');
+      document.getElementById('add-tool-form').querySelector('button[type="submit"]').textContent = '更新工具';
+    }
+    
+    // 导出备份
+    function exportBackup() {
+      const savedTools = localStorage.getItem(STORAGE_KEY);
+      const toolsData = savedTools ? JSON.parse(savedTools) : [];
+      
+      const backupData = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        tools: toolsData
+      };
+      
+      const dataStr = JSON.stringify(backupData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `tool-center-backup-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+    
+    // 导入备份
+    function importBackup(file) {
+      const reader = new FileReader();
+      const statusElement = document.getElementById('import-status');
+      
+      reader.onload = function(event) {
+        try {
+          const backupData = JSON.parse(event.target.result);
+          
+          // 验证备份数据
+          if (!backupData.tools || !Array.isArray(backupData.tools)) {
+            throw new Error('无效的备份文件格式');
+          }
+          
+          // 显示确认对话框
+          showConfirmDialog(
+            '确认导入',
+            `此操作将导入 ${backupData.tools.length} 个工具。已有的自定义工具将会被替换。是否继续？`,
+            () => {
+              // 保存导入的工具
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(backupData.tools));
+              
+              // 刷新页面
+              location.reload();
+            }
+          );
+          
+          statusElement.textContent = '备份文件验证成功，请确认导入';
+          statusElement.className = 'mt-2 text-sm text-green-600';
+        } catch (error) {
+          statusElement.textContent = '导入失败：' + error.message;
+          statusElement.className = 'mt-2 text-sm text-red-600';
+        }
+      };
+      
+      reader.onerror = function() {
+        statusElement.textContent = '文件读取失败';
+        statusElement.className = 'mt-2 text-sm text-red-600';
+      };
+      
+      reader.readAsText(file);
+    }
+    
+    // 重置工具
+    function resetTools() {
+      showConfirmDialog(
+        '确认重置',
+        '此操作将删除所有自定义添加的工具，恢复到原始状态。是否继续？',
+        () => {
+          localStorage.removeItem(STORAGE_KEY);
+          location.reload();
+        }
+      );
+    }
+    
+    // 显示确认对话框
+    function showConfirmDialog(title, message, onConfirm) {
+      const dialog = document.getElementById('confirm-dialog');
+      const titleElement = document.getElementById('confirm-title');
+      const messageElement = document.getElementById('confirm-message');
+      const okButton = document.getElementById('confirm-ok');
+      const cancelButton = document.getElementById('confirm-cancel');
+      
+      // 设置对话框内容
+      titleElement.textContent = title;
+      messageElement.textContent = message;
+      
+      // 移除之前的事件监听器
+      const newOkButton = okButton.cloneNode(true);
+      okButton.parentNode.replaceChild(newOkButton, okButton);
+      
+      const newCancelButton = cancelButton.cloneNode(true);
+      cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
+      
+      // 添加新的事件监听器
+      newOkButton.addEventListener('click', () => {
+        dialog.classList.add('hidden');
+        if (onConfirm) onConfirm();
+      });
+      
+      newCancelButton.addEventListener('click', () => {
+        dialog.classList.add('hidden');
+      });
+      
+      // 显示对话框
+      dialog.classList.remove('hidden');
+    }
+    
+    // 事件监听器
+    document.addEventListener('DOMContentLoaded', () => {
+      // 初始化工具
+      initTools();
+      
+      // 添加工具按钮
+      const addToolButtons = [
+        document.getElementById('add-tool-button'),
+        document.getElementById('add-tool-button-mobile')
+      ];
+      
+      addToolButtons.forEach(button => {
+        if (button) {
+          button.addEventListener('click', () => {
+            // 重置表单
+            document.getElementById('add-tool-form').reset();
+            delete document.getElementById('add-tool-form').dataset.editingToolId;
+            document.getElementById('add-tool-form').querySelector('button[type="submit"]').textContent = '添加工具';
+            
+            // 显示模态框
+            document.getElementById('add-tool-modal').classList.remove('hidden');
+          });
+        }
+      });
+      
+      // 关闭添加工具模态框
+      const closeAddToolButtons = [
+        document.getElementById('close-add-tool-modal'),
+        document.getElementById('cancel-add-tool')
+      ];
+      
+      closeAddToolButtons.forEach(button => {
+        if (button) {
+          button.addEventListener('click', () => {
+            document.getElementById('add-tool-modal').classList.add('hidden');
+          });
+        }
+      });
+      
+      // 提交添加工具表单
+      document.getElementById('add-tool-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const form = e.target;
+        const editingToolId = form.dataset.editingToolId;
+        
+        const tool = {
+          id: editingToolId || 'tool_' + Date.now(),
+          name: document.getElementById('tool-name').value,
+          category: document.getElementById('tool-category').value,
+          url: document.getElementById('tool-url').value,
+          description: document.getElementById('tool-description').value,
+          icon: document.getElementById('tool-icon').value,
+          color: document.getElementById('tool-color').value
+        };
+        
+        // 如果是编辑现有工具，先从DOM中删除
+        if (editingToolId) {
+          const existingTool = document.querySelector(`[data-tool-id="${editingToolId}"]`);
+          if (existingTool) {
+            existingTool.remove();
+          }
+        }
+        
+        // 保存工具
+        saveTool(tool);
+        
+        // 添加到DOM
+        addToolToDOM(tool);
+        
+        // 关闭模态框
+        document.getElementById('add-tool-modal').classList.add('hidden');
+      });
+      
+      // 备份按钮
+      const backupButtons = [
+        document.getElementById('backup-button'),
+        document.getElementById('backup-button-mobile'),
+        document.getElementById('backup-button-mobile-menu')
+      ];
+      
+      backupButtons.forEach(button => {
+        if (button) {
+          button.addEventListener('click', () => {
+            document.getElementById('backup-modal').classList.remove('hidden');
+            // 关闭移动菜单（如果打开）
+            if (!mobileMenu.classList.contains('hidden')) {
+              mobileMenu.classList.add('hidden');
+            }
+          });
+        }
+      });
+      
+      // 关闭备份模态框
+      document.getElementById('close-backup-modal').addEventListener('click', () => {
+        document.getElementById('backup-modal').classList.add('hidden');
+      });
+      
+      // 导出备份
+      document.getElementById('export-backup').addEventListener('click', exportBackup);
+      
+      // 导入备份
+      document.getElementById('import-backup').addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          importBackup(e.target.files[0]);
+          // 重置文件输入，以便可以再次选择同一个文件
+          e.target.value = '';
+        }
+      });
+      
+      // 重置工具
+      document.getElementById('reset-tools').addEventListener('click', resetTools);
+      
+      // 点击模态框背景关闭模态框
+      const modals = [
+        document.getElementById('add-tool-modal'),
+        document.getElementById('backup-modal'),
+        document.getElementById('confirm-dialog')
+      ];
+      
+      modals.forEach(modal => {
+        if (modal) {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+              modal.classList.add('hidden');
+            }
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

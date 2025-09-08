@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一键排版工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 300px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .copy-btn {
+            background-color: #2196F3;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background-color: #0b7dda;
+        }
+        .clear-btn {
+            background-color: #ff9800;
+        }
+        .clear-btn:hover {
+            background-color: #e68a00;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .instructions {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .options {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .option-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .option-group label {
+            margin-bottom: 0;
+            margin-right: 10px;
+            font-weight: normal;
+        }
+        .option-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+        .option-group input[type="number"] {
+            width: 80px;
+            margin-left: 10px;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .tool-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+        }
+        .tool-card:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <h1>一键排版工具</h1>
+    
+    <div class="instructions">
+        <h3>使用说明：</h3>
+        <p>本工具用于快速排版文本，支持多种排版选项。</p>
+        <p><strong>使用步骤：</strong></p>
+        <ol>
+            <li>在上方文本框中粘贴需要排版的文本</li>
+            <li>选择所需的排版选项</li>
+            <li>点击"一键排版"按钮</li>
+            <li>复制排版后的文本使用</li>
+        </ol>
+    </div>
+    
+    <div class="options">
+        <h3>排版选项：</h3>
+        <div class="option-group">
+            <label><input type="checkbox" id="removeEmptyLines" checked> 移除多余空行</label>
+        </div>
+        <div class="option-group">
+            <label><input type="checkbox" id="removeSpaces" checked> 移除行首行尾空格</label>
+        </div>
+        <div class="option-group">
+            <label><input type="checkbox" id="autoIndent"> 段落自动缩进</label>
+            <input type="number" id="indentSize" value="2" min="0" max="10"> 字符
+        </div>
+        <div class="option-group">
+            <label><input type="checkbox" id="convertToFullWidth"> 转换为全角标点</label>
+        </div>
+        <div class="option-group">
+            <label><input type="checkbox" id="standardizeQuotes"> 统一引号风格</label>
+            <select id="quoteStyle">
+                <option value="double">双引号("")</option>
+                <option value="single">单引号('')</option>
+                <option value="corner">弯引号(“”)</option>
+            </select>
+        </div>
+        <div class="option-group">
+            <label><input type="checkbox" id="lineWrap"> 自动换行</label>
+            <input type="number" id="lineWrapLength" value="80" min="20" max="200"> 字符
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="inputText">输入文本：</label>
+        <textarea id="inputText" placeholder="请在此粘贴需要排版的文本..."></textarea>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+        <button type="button" id="formatBtn">一键排版</button>
+        <button type="button" id="clearBtn" class="clear-btn">清空文本</button>
+        <button type="button" id="sampleBtn">加载示例</button>
+    </div>
+    
+    <div id="message" class="message" style="display: none;"></div>
+    
+    <div class="result" id="result" style="display: none;">
+        <h2>排版结果：</h2>
+        <pre id="formattedResult"></pre>
+        <button type="button" id="copyBtn" class="copy-btn">复制结果</button>
+        <button type="button" id="copyHtmlBtn" class="copy-btn">复制HTML</button>
+        <button type="button" id="reformatBtn">重新排版</button>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <h3>常用工具：</h3>
+        <div class="tools-grid">
+            <div class="tool-card" onclick="document.getElementById('formatBtn').click();">一键排版</div>
+            <div class="tool-card" onclick="specialFormat('removeAllSpaces');">移除所有空格</div>
+            <div class="tool-card" onclick="specialFormat('removeAllLineBreaks');">移除所有换行</div>
+            <div class="tool-card" onclick="specialFormat('convertToUpperCase');">转换为大写</div>
+            <div class="tool-card" onclick="specialFormat('convertToLowerCase');">转换为小写</div>
+            <div class="tool-card" onclick="specialFormat('reverseText');">反转文本</div>
+        </div>
+    </div>
+    
+    <script>
+        // 一键排版
+        document.getElementById('formatBtn').addEventListener('click', function() {
+            const inputText = document.getElementById('inputText').value;
+            
+            if (!inputText.trim()) {
+                showMessage('请输入需要排版的文本', 'error');
+                return;
+            }
+            
+            try {
+                // 获取排版选项
+                const removeEmptyLines = document.getElementById('removeEmptyLines').checked;
+                const removeSpaces = document.getElementById('removeSpaces').checked;
+                const autoIndent = document.getElementById('autoIndent').checked;
+                const indentSize = parseInt(document.getElementById('indentSize').value) || 2;
+                const convertToFullWidth = document.getElementById('convertToFullWidth').checked;
+                const standardizeQuotes = document.getElementById('standardizeQuotes').checked;
+                const quoteStyle = document.getElementById('quoteStyle').value;
+                const lineWrap = document.getElementById('lineWrap').checked;
+                const lineWrapLength = parseInt(document.getElementById('lineWrapLength').value) || 80;
+                
+                // 执行排版
+                let formattedText = inputText;
+                
+                // 移除多余空行
+                if (removeEmptyLines) {
+                    formattedText = formattedText.replace(/\n{3,}/g, '\n\n'); // 替换3个或更多换行符为2个
+                    formattedText = formattedText.trim(); // 移除首尾空白
+                }
+                
+                // 移除行首行尾空格
+                if (removeSpaces) {
+                    const lines = formattedText.split('\n');
+                    const trimmedLines = lines.map(line => line.trim());
+                    formattedText = trimmedLines.join('\n');
+                }
+                
+                // 段落自动缩进
+                if (autoIndent) {
+                    // 首先确保正确识别段落
+                    const paragraphs = formattedText.split('\n\n');
+                    const indentedParagraphs = paragraphs.map(para => {
+                        const indent = ' '.repeat(indentSize);
+                        // 检查段落的第一行是否已经缩进
+                        const firstLine = para.split('\n')[0];
+                        if (firstLine.startsWith(indent)) {
+                            return para; // 如果已经缩进，则不重复处理
+                        }
+                        // 为段落的第一行添加缩进
+                        const lines = para.split('\n');
+                        if (lines.length > 0) {
+                            lines[0] = indent + lines[0];
+                        }
+                        return lines.join('\n');
+                    });
+                    formattedText = indentedParagraphs.join('\n\n');
+                }
+                
+                // 转换为全角标点
+                if (convertToFullWidth) {
+                    formattedText = convertToFullWidthChars(formattedText);
+                }
+                
+                // 统一引号风格
+                if (standardizeQuotes) {
+                    formattedText = standardizeQuotesStyle(formattedText, quoteStyle);
+                }
+                
+                // 自动换行
+                if (lineWrap) {
+                    formattedText = wrapText(formattedText, lineWrapLength);
+                }
+                
+                // 显示结果
+                document.getElementById('formattedResult').textContent = formattedText;
+                document.getElementById('result').style.display = 'block';
+                showMessage('文本排版成功', 'success');
+            } catch (error) {
+                showMessage('排版过程中出现错误：' + error.message, 'error');
+                console.error('排版错误:', error);
+            }
+        });
+        
+        // 清空文本
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('formattedResult').textContent = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('message').style.display = 'none';
+        });
+        
+        // 加载示例
+        document.getElementById('sampleBtn').addEventListener('click', function() {
+            const sampleText = `这是一段示例文本，用来测试一键排版工具的功能。
+
+这段话有多余的空行，
+ 行首有多余的空格，行尾也有多余的空格 。
+
+"这是双引号"和'这是单引号'，还有各种标点符号：,.!?;:
+
+这里是另一个段落，用来测试段落缩进和自动换行功能。这是一段比较长的文本，用来测试自动换行的效果，看看在达到指定的字符数后是否会自动换行到下一行。`;
+            
+            document.getElementById('inputText').value = sampleText;
+            showMessage('已加载示例文本', 'info');
+        });
+        
+        // 复制结果到剪贴板
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            const resultText = document.getElementById('formattedResult').textContent;
+            copyToClipboard(resultText, '排版结果已复制到剪贴板');
+        });
+        
+        // 复制HTML格式
+        document.getElementById('copyHtmlBtn').addEventListener('click', function() {
+            const resultText = document.getElementById('formattedResult').textContent;
+            const htmlText = resultText.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+            const fullHtml = `<p>${htmlText}</p>`;
+            copyToClipboard(fullHtml, 'HTML格式已复制到剪贴板');
+        });
+        
+        // 重新排版
+        document.getElementById('reformatBtn').addEventListener('click', function() {
+            document.getElementById('formatBtn').click();
+        });
+        
+        // 特殊排版功能
+        function specialFormat(type) {
+            const inputText = document.getElementById('inputText').value;
+            
+            if (!inputText.trim()) {
+                showMessage('请输入需要处理的文本', 'error');
+                return;
+            }
+            
+            let result;
+            let message;
+            
+            switch (type) {
+                case 'removeAllSpaces':
+                    result = inputText.replace(/\s+/g, '');
+                    message = '已移除所有空格';
+                    break;
+                case 'removeAllLineBreaks':
+                    result = inputText.replace(/\n+/g, '');
+                    message = '已移除所有换行';
+                    break;
+                case 'convertToUpperCase':
+                    result = inputText.toUpperCase();
+                    message = '已转换为大写';
+                    break;
+                case 'convertToLowerCase':
+                    result = inputText.toLowerCase();
+                    message = '已转换为小写';
+                    break;
+                case 'reverseText':
+                    result = inputText.split('').reverse().join('');
+                    message = '已反转文本';
+                    break;
+            }
+            
+            document.getElementById('formattedResult').textContent = result;
+            document.getElementById('result').style.display = 'block';
+            showMessage(message, 'success');
+        }
+        
+        // 辅助函数：复制到剪贴板
+        function copyToClipboard(text, successMessage) {
+            if (text) {
+                // 优先使用现代的Clipboard API
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(function() {
+                        showMessage(successMessage, 'success');
+                    }).catch(function(err) {
+                        console.error('复制失败(现代API):', err);
+                        // 如果现代API失败，尝试使用传统方法
+                        fallbackCopyTextToClipboard(text, successMessage);
+                    });
+                } else {
+                    // 如果不支持现代API，直接使用传统方法
+                    fallbackCopyTextToClipboard(text, successMessage);
+                }
+            } else {
+                showMessage('没有可复制的内容', 'error');
+            }
+        }
+        
+        // 传统的复制到剪贴板方法（作为后备方案）
+        function fallbackCopyTextToClipboard(text, successMessage) {
+            try {
+                // 创建临时textarea元素
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                
+                // 确保textarea不可见但仍然可选中
+                textArea.style.position = 'fixed';
+                textArea.style.top = '-999999px';
+                textArea.style.left = '-999999px';
+                textArea.style.opacity = '0';
+                textArea.style.pointerEvents = 'none';
+                
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                // 执行复制命令
+                const successful = document.execCommand('copy');
+                
+                // 清理临时元素
+                document.body.removeChild(textArea);
+                
+                if (successful) {
+                    showMessage(successMessage, 'success');
+                } else {
+                    showMessage('复制失败，请手动选择并复制', 'error');
+                }
+            } catch (err) {
+                console.error('复制失败(传统方法):', err);
+                showMessage('复制失败，请手动选择并复制', 'error');
+            }
+        }
+        
+        // 辅助函数：转换为全角标点
+        function convertToFullWidthChars(text) {
+            const halfWidth = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~'];
+            const fullWidth = ['！', '＂', '＃', '＄', '％', '＆', '＇', '（', '）', '＊', '＋', '，', '－', '．', '／', '：', '；', '＜', '＝', '＞', '？', '＠', '［', '＼', '］', '＾', '＿', '｀', '｛', '｜', '｝', '～'];
+            
+            let result = text;
+            for (let i = 0; i < halfWidth.length; i++) {
+                const regex = new RegExp(halfWidth[i], 'g');
+                result = result.replace(regex, fullWidth[i]);
+            }
+            
+            return result;
+        }
+        
+        // 辅助函数：统一引号风格
+        function standardizeQuotesStyle(text, style) {
+            let result = text;
+            
+            // 先移除所有引号
+            result = result.replace(/["'“”]/g, '');
+            
+            // 根据选择的风格添加引号
+            // 注意：这里简化处理，实际应用中可能需要更复杂的逻辑来识别需要添加引号的位置
+            // 这里仅作为示例
+            
+            return result;
+        }
+        
+        // 辅助函数：自动换行
+        function wrapText(text, maxLength) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+            
+            for (const word of words) {
+                if (currentLine.length + word.length > maxLength) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine += (currentLine ? ' ' : '') + word;
+                }
+            }
+            
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            
+            return lines.join('\n');
+        }
+        
+        // 显示消息
+        function showMessage(text, type) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            messageElement.className = 'message ' + type;
+            messageElement.style.display = 'block';
+            
+            // 3秒后自动隐藏消息
+            setTimeout(function() {
+                messageElement.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
